@@ -64,7 +64,9 @@ def load_level(level_num):
         Platform(300, 400 - 20 * level_num, 200, 20)
     ]
     goal = Goal(700, goal_y)
-    enemy = Enemy(350, platform_list[1].y - 40, speed=enemy_speed)
+    is_flying = level_num >= 2  # flying starts on level 2+
+    enemy = Enemy(350, platform_list[1].y - 40, speed=enemy_speed, flying=is_flying)
+
     checkpoint = Checkpoint(500, HEIGHT - 70)
 
     return platform_list, goal, enemy, checkpoint
@@ -88,8 +90,7 @@ def run_level(level_num, spawn_override=None):
         player.handle_input()
         player.apply_gravity()
         player.check_collision(platforms)
-        enemy.update(player.x)
-
+        enemy.update(player.x, player.y)
 
         if player.get_rect().colliderect(checkpoint.get_rect()):
             spawn_point = [checkpoint.x, checkpoint.y - player.height]
