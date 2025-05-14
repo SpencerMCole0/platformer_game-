@@ -63,7 +63,6 @@ def load_level(level_num):
     ground = Platform(0, HEIGHT - 40, WIDTH, 40)
     platform_list.append(ground)
 
-    # Step-up platform pattern
     x, y = 100, HEIGHT - 100
     for _ in range(num_steps):
         width = random.randint(120, 220)
@@ -71,41 +70,42 @@ def load_level(level_num):
         x = max(0, min(x + random.randint(-100, 100), WIDTH - width))
         y = max(60, y - random.randint(50, 90))
 
-    # Goal on top platform
     goal_platform = platform_list[-1]
     goal_x = goal_platform.x + goal_platform.width - 40
     goal_y = goal_platform.y - 40
     goal = Goal(goal_x, goal_y)
 
-    # Midpoint between start (x=50) and goal
     mid_x = (50 + goal_x) // 2
-    platforms_above_ground = platform_list[1:]
+    platforms_above_ground = platform_list[1:-1]  # Exclude start and goal platforms
     checkpoint_platform = min(platforms_above_ground, key=lambda p: abs((p.x + p.width // 2) - mid_x))
     checkpoint_x = checkpoint_platform.x + (checkpoint_platform.width // 2) - 15
     checkpoint_y = checkpoint_platform.y - 30
     checkpoint = Checkpoint(checkpoint_x, checkpoint_y)
 
-    # Enemies
     enemies = []
 
-    # 1 enemy guarding checkpoint
+    # One guaranteed checkpoint guard
     guard_x = checkpoint_platform.x + random.randint(0, max(10, checkpoint_platform.width - 40))
     guard_y = checkpoint_platform.y - 40
     guard_flying = random.choice([True, False])
     enemies.append(Enemy(guard_x, guard_y, speed=enemy_speed, flying=guard_flying))
+    platforms_used = {checkpoint_platform}
 
-    # Add more enemies
-    for _ in range(level_num):
+    # Controlled additional enemies
+    max_enemies = min(level_num + 1, len(platforms_above_ground))
+    for _ in range(max_enemies):
         plat = random.choice(platforms_above_ground)
+        if plat in platforms_used and plat.width < 160:
+            continue
         ex = plat.x + random.randint(0, max(10, plat.width - 40))
         ey = plat.y - 40
         flying = random.choice([True, False])
         enemies.append(Enemy(ex, ey, speed=enemy_speed, flying=flying))
+        platforms_used.add(plat)
 
     return platform_list, goal, enemies, checkpoint
 
 def run_level(level_num, spawn_override=None):
-    # Safe ground spawn or checkpoint
     if spawn_override:
         spawn_point = spawn_override
         checkpoint_reached = True
@@ -154,7 +154,6 @@ def run_level(level_num, spawn_override=None):
             if player.get_rect().colliderect(goal.get_rect()):
                 return "next", None
 
-        # Draw everything
         player.draw(screen)
         for plat in platforms:
             plat.draw(screen)
@@ -169,12 +168,11 @@ def run_level(level_num, spawn_override=None):
 
         pygame.display.flip()
 
-# Game loop
+# 🎮 Game loop
 MAX_LEVEL = 3
 
 while True:
     show_start_screen()
-
     level_num = 1
     checkpoint_state = None
 
