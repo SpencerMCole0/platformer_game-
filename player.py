@@ -37,7 +37,7 @@ class Player:
         self.on_ground = False
         for plat in platforms:
             if self.get_rect().colliderect(plat.get_rect()):
-                if self.vel_y > 0 and self.get_rect().bottom <= plat.y + 10:
+                if self.vel_y > 0 and self.get_rect().bottom - self.vel_y <= plat.y + 5:
                     self.y = plat.y - self.height
                     self.vel_y = 0
                     self.on_ground = True
