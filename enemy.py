@@ -7,7 +7,7 @@ GRAVITY = 0.5
 class Enemy:
     def __init__(self, x, y, width=40, height=40, speed=2, range_to_follow=300, flying=False):
         self.x = x
-        self.y = min(self.y, 600 - self.height)
+        self.y = y
         self.vel_y = 0
         self.width = width
         self.height = height
@@ -27,11 +27,9 @@ class Enemy:
                 self.apply_gravity()
                 self.check_platform_collision(platforms)
 
-                # Smarter floating logic
                 if abs(dx) > 5:
                     self.x += self.speed * 0.6 if dx > 0 else -self.speed * 0.6
 
-                # Move vertically only if no collision above/below
                 if abs(dy) > 5:
                     vertical_rect = self.get_rect().move(0, self.speed * 0.6 if dy > 0 else -self.speed * 0.6)
                     if not any(vertical_rect.colliderect(p.get_rect()) for p in platforms):
@@ -42,6 +40,9 @@ class Enemy:
                 elif dx > 0:
                     self.x += self.speed
 
+        # ✅ Clamp to bottom of screen to prevent fall-through
+        self.y = min(self.y, 600 - self.height)
+
     def apply_gravity(self):
         self.vel_y += GRAVITY
         self.y += self.vel_y
@@ -50,7 +51,7 @@ class Enemy:
         self.on_ground = False
         for plat in platforms:
             if self.get_rect().colliderect(plat.get_rect()):
-                if self.vel_y > 0 and self.get_rect().bottom <= plat.y + 10:
+                if self.vel_y > 0 and self.get_rect().bottom - self.vel_y <= plat.y + 10:
                     self.y = plat.y - self.height
                     self.vel_y = 0
                     self.on_ground = True
