@@ -76,31 +76,22 @@ def load_level(level_num):
     goal = Goal(goal_x, goal_y)
 
     mid_x = (50 + goal_x) // 2
-    platforms_above_ground = platform_list[1:-1]  # skip ground and goal platform
+    platforms_above_ground = platform_list[1:-1]
     checkpoint_platform = min(platforms_above_ground, key=lambda p: abs((p.x + p.width // 2) - mid_x))
     checkpoint_x = checkpoint_platform.x + (checkpoint_platform.width // 2) - 15
     checkpoint_y = checkpoint_platform.y - 30
     checkpoint = Checkpoint(checkpoint_x, checkpoint_y)
-
-    # 🛡️ Block enemy overlap with checkpoint
-    enemies = []
-    platforms_used = set()
     checkpoint_rect = pygame.Rect(checkpoint_x, checkpoint_y, 30, 30)
 
-    for _ in range(10):  # Try placing guard 10 times
-        guard_offset = random.choice([-100, -80, 80, 100])
-        guard_x = checkpoint_x + guard_offset
-        guard_x = max(checkpoint_platform.x, min(guard_x, checkpoint_platform.x + checkpoint_platform.width - 40))
-        guard_y = checkpoint_platform.y - 40
-        guard_rect = pygame.Rect(guard_x, guard_y, 40, 40)
+    # Enemies: exclude checkpoint platform
+    enemies = []
+    platforms_used = set()
 
-        if not guard_rect.colliderect(checkpoint_rect):
-            guard_flying = random.choice([True, False])
-            enemies.append(Enemy(guard_x, guard_y, speed=enemy_speed, flying=guard_flying))
-            platforms_used.add(checkpoint_platform)
-            break
+    enemy_platform_candidates = [
+        plat for plat in platform_list[1:-1]
+        if plat != checkpoint_platform
+    ]
 
-    enemy_platform_candidates = platform_list[1:-1]
     max_enemies = min(level_num + 1, len(enemy_platform_candidates))
     for _ in range(max_enemies):
         plat = random.choice(enemy_platform_candidates)
@@ -119,7 +110,6 @@ def load_level(level_num):
         platforms_used.add(plat)
 
     return platform_list, goal, enemies, checkpoint
-
 
 def run_level(level_num, spawn_override=None):
     if spawn_override:
@@ -170,6 +160,7 @@ def run_level(level_num, spawn_override=None):
             if player.get_rect().colliderect(goal.get_rect()):
                 return "next", None
 
+        # Draw everything
         player.draw(screen)
         for plat in platforms:
             plat.draw(screen)
@@ -178,20 +169,25 @@ def run_level(level_num, spawn_override=None):
         for enemy in enemies:
             enemy.draw(screen)
 
+        # Draw level counter
+        level_label = font_small.render(f"Level: {level_num}", True, (0, 0, 0))
+        screen.blit(level_label, (10, 10))
+
         if paused:
             pause_msg = font_small.render("Paused – Press P to Resume", True, (0, 0, 0))
             screen.blit(pause_msg, (WIDTH // 2 - pause_msg.get_width() // 2, HEIGHT // 2))
 
         pygame.display.flip()
 
-# 🎮 Game loop
+# Endless loop
 while True:
     show_start_screen()
     level_num = 1
     checkpoint_state = None
 
-    while True:  # Endless loop
+    while True:
         result, checkpoint_state = run_level(level_num, spawn_override=checkpoint_state)
+
         if result == "next":
             level_num += 1
             checkpoint_state = None
@@ -202,10 +198,3 @@ while True:
         elif result == "quit":
             pygame.quit()
             sys.exit()
-
-    final_key = show_final_screen()
-    if final_key == pygame.K_r:
-        continue
-    else:
-        pygame.quit()
-        sys.exit()
