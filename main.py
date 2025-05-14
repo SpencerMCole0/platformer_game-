@@ -53,12 +53,15 @@ def show_final_screen():
     show_text_screen("You Beat All Levels!", "Press R to Play Again or Q to Quit")
     return wait_for_key([pygame.K_r, pygame.K_q])
 
-# ✅ Random level generator
+# ✅ Consistent and fair procedural level generator
 def load_level(level_num):
+    random.seed(level_num)  # lock level layout
+
     enemy_speed = 1.5 + level_num * 0.8
     num_platforms = 2 + level_num
     num_enemies = 1 + level_num
 
+    # Always add a ground platform
     platform_list = [Platform(0, HEIGHT - 40, WIDTH, 40)]
 
     for _ in range(num_platforms):
@@ -67,13 +70,17 @@ def load_level(level_num):
         plat_y = random.randint(150, HEIGHT - 150)
         platform_list.append(Platform(plat_x, plat_y, plat_width, 20))
 
+    # Clamp goal to highest non-ground platform
+    top_platform = min(platform_list[1:], key=lambda p: p.y)
+    goal_x = top_platform.x + top_platform.width - 40
+    goal_y = top_platform.y - 40
+    goal = Goal(goal_x, goal_y)
+
+    # Safe grounded checkpoint
     checkpoint_x = random.randint(50, WIDTH - 100)
     checkpoint = Checkpoint(checkpoint_x, HEIGHT - 70)
 
-    goal_x = random.randint(WIDTH - 200, WIDTH - 60)
-    goal_y = random.randint(80, 200)
-    goal = Goal(goal_x, goal_y)
-
+    # Enemies on random platforms (not ground)
     enemies = []
     for _ in range(num_enemies):
         plat = random.choice(platform_list[1:])
