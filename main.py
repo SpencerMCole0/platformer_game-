@@ -55,39 +55,42 @@ def show_final_screen():
 
 # ✅ Consistent and fair procedural level generator
 def load_level(level_num):
-    random.seed(level_num)  # lock level layout
+    random.seed(level_num)
 
     enemy_speed = 1.5 + level_num * 0.8
-    num_platforms = 2 + level_num
-    num_enemies = 1 + level_num
+    num_steps = 3 + level_num  # total reachable steps
 
-    # Always add a ground platform
-    platform_list = [Platform(0, HEIGHT - 40, WIDTH, 40)]
+    platform_list = []
 
-    for _ in range(num_platforms):
-        plat_width = random.randint(100, 250)
-        plat_x = random.randint(0, WIDTH - plat_width)
-        plat_y = random.randint(150, HEIGHT - 150)
-        platform_list.append(Platform(plat_x, plat_y, plat_width, 20))
+    # Always start with the ground
+    ground = Platform(0, HEIGHT - 40, WIDTH, 40)
+    platform_list.append(ground)
 
-    # Clamp goal to highest non-ground platform
-    top_platform = min(platform_list[1:], key=lambda p: p.y)
-    goal_x = top_platform.x + top_platform.width - 40
-    goal_y = top_platform.y - 40
+    # Build a step-like path up
+    x, y = 100, HEIGHT - 100
+    for _ in range(num_steps):
+        width = random.randint(120, 220)
+        platform_list.append(Platform(x, y, width, 20))
+        x = max(0, min(x + random.randint(-100, 100), WIDTH - width))
+        y = max(60, y - random.randint(50, 90))  # stair upward
+
+    # Goal on top platform
+    goal_platform = platform_list[-1]
+    goal_x = goal_platform.x + goal_platform.width - 40
+    goal_y = goal_platform.y - 40
     goal = Goal(goal_x, goal_y)
 
     # Safe grounded checkpoint
-    checkpoint_x = random.randint(50, WIDTH - 100)
-    checkpoint = Checkpoint(checkpoint_x, HEIGHT - 70)
+    checkpoint = Checkpoint(random.randint(50, WIDTH - 100), HEIGHT - 70)
 
-    # Enemies on random platforms (not ground)
+    # Add enemies on random upper platforms (not ground)
     enemies = []
-    for _ in range(num_enemies):
+    for _ in range(1 + level_num):
         plat = random.choice(platform_list[1:])
-        enemy_x = plat.x + random.randint(0, max(10, plat.width - 40))
-        enemy_y = plat.y - 40
-        is_flying = random.choice([True, False])
-        enemies.append(Enemy(enemy_x, enemy_y, speed=enemy_speed, flying=is_flying))
+        ex = plat.x + random.randint(0, max(10, plat.width - 40))
+        ey = plat.y - 40
+        flying = random.choice([True, False])
+        enemies.append(Enemy(ex, ey, speed=enemy_speed, flying=flying))
 
     return platform_list, goal, enemies, checkpoint
 
