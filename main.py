@@ -44,7 +44,7 @@ def show_game_over_screen():
 def load_level(level_num):
     random.seed(level_num)
 
-    enemy_speed = 1.5 + level_num * 0.8
+    enemy_speed = min(1.5 + level_num * 0.4, 4.0)
     num_steps = 3 + level_num
 
     platform_list = []
