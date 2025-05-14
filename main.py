@@ -102,6 +102,8 @@ def run_level(level_num, spawn_override=None):
     platforms, goal, enemies, checkpoint = load_level(level_num)
 
     running = True
+    paused = False
+
     while running:
         clock.tick(60)
         screen.fill((135, 206, 235))
@@ -109,30 +111,35 @@ def run_level(level_num, spawn_override=None):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    paused = not paused
 
-        player.handle_input()
-        player.apply_gravity()
-        player.check_collision(platforms)
+        if not paused:
+            player.handle_input()
+            player.apply_gravity()
+            player.check_collision(platforms)
 
-        for enemy in enemies:
-            enemy.update(player.x, player.y, platforms)
-            if player.get_rect().colliderect(enemy.get_rect()):
-                key = show_game_over_screen(checkpoint_reached)
-                if key == pygame.K_r:
-                    return "retry", None
-                elif key == pygame.K_c and checkpoint_reached:
-                    return "checkpoint", spawn_point
-                elif key == pygame.K_q:
-                    pygame.quit()
-                    sys.exit()
+            for enemy in enemies:
+                enemy.update(player.x, player.y, platforms)
+                if player.get_rect().colliderect(enemy.get_rect()):
+                    key = show_game_over_screen(checkpoint_reached)
+                    if key == pygame.K_r:
+                        return "retry", None
+                    elif key == pygame.K_c and checkpoint_reached:
+                        return "checkpoint", spawn_point
+                    elif key == pygame.K_q:
+                        pygame.quit()
+                        sys.exit()
 
-        if player.get_rect().colliderect(checkpoint.get_rect()):
-            spawn_point = [checkpoint.x, checkpoint.y - player.height]
-            checkpoint_reached = True
+            if player.get_rect().colliderect(checkpoint.get_rect()):
+                spawn_point = [checkpoint.x, checkpoint.y - player.height]
+                checkpoint_reached = True
 
-        if player.get_rect().colliderect(goal.get_rect()):
-            return "next", None
+            if player.get_rect().colliderect(goal.get_rect()):
+                return "next", None
 
+        # Always draw, even when paused
         player.draw(screen)
         for plat in platforms:
             plat.draw(screen)
@@ -141,9 +148,11 @@ def run_level(level_num, spawn_override=None):
         for enemy in enemies:
             enemy.draw(screen)
 
-        pygame.display.flip()
+        if paused:
+            pause_msg = font_small.render("Paused – Press P to Resume", True, (0, 0, 0))
+            screen.blit(pause_msg, (WIDTH // 2 - pause_msg.get_width() // 2, HEIGHT // 2))
 
-    return "quit", None
+        pygame.display.flip()
 
 # 🎮 Game loop
 MAX_LEVEL = 3
