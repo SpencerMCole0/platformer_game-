@@ -24,20 +24,26 @@ class Enemy:
 
         if distance < self.range_to_follow:
             if self.flying:
-                # Float horizontally only, apply gravity + platform stop
-                if dx < -1:
-                    self.x -= self.speed
-                elif dx > 1:
-                    self.x += self.speed
-            else:
-                if player_x < self.x:
-                    self.x -= self.speed
-                elif player_x > self.x + self.width:
-                    self.x += self.speed
+                self.apply_gravity()
+                self.check_platform_collision(platforms)
 
-        if self.flying:
-            self.apply_gravity()
-            self.check_platform_collision(platforms)
+                # Try horizontal tracking first
+                if abs(dx) > 5:
+                    if dx < 0:
+                        self.x -= self.speed * 0.6
+                    else:
+                        self.x += self.speed * 0.6
+
+                # Only move vertically if not blocked by platform above
+                if abs(dy) > 5:
+                    vertical_rect = self.get_rect().move(0, self.speed * 0.6 if dy > 0 else -self.speed * 0.6)
+                    if not any(vertical_rect.colliderect(p.get_rect()) for p in platforms):
+                        self.y += self.speed * 0.6 if dy > 0 else -self.speed * 0.6
+            else:
+                if dx < 0:
+                    self.x -= self.speed
+                elif dx > 0:
+                    self.x += self.speed
 
     def apply_gravity(self):
         self.vel_y += GRAVITY
