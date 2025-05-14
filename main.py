@@ -53,26 +53,23 @@ def show_final_screen():
     show_text_screen("You Beat All Levels!", "Press R to Play Again or Q to Quit")
     return wait_for_key([pygame.K_r, pygame.K_q])
 
-# ✅ Consistent and fair procedural level generator
 def load_level(level_num):
     random.seed(level_num)
 
     enemy_speed = 1.5 + level_num * 0.8
-    num_steps = 3 + level_num  # total reachable steps
+    num_steps = 3 + level_num
 
     platform_list = []
-
-    # Always start with the ground
     ground = Platform(0, HEIGHT - 40, WIDTH, 40)
     platform_list.append(ground)
 
-    # Build a step-like path up
+    # Step-up platform pattern
     x, y = 100, HEIGHT - 100
     for _ in range(num_steps):
         width = random.randint(120, 220)
         platform_list.append(Platform(x, y, width, 20))
         x = max(0, min(x + random.randint(-100, 100), WIDTH - width))
-        y = max(60, y - random.randint(50, 90))  # stair upward
+        y = max(60, y - random.randint(50, 90))
 
     # Goal on top platform
     goal_platform = platform_list[-1]
@@ -80,13 +77,26 @@ def load_level(level_num):
     goal_y = goal_platform.y - 40
     goal = Goal(goal_x, goal_y)
 
-    # Safe grounded checkpoint
-    checkpoint = Checkpoint(random.randint(50, WIDTH - 100), HEIGHT - 70)
+    # Midpoint between start (x=50) and goal
+    mid_x = (50 + goal_x) // 2
+    platforms_above_ground = platform_list[1:]
+    checkpoint_platform = min(platforms_above_ground, key=lambda p: abs((p.x + p.width // 2) - mid_x))
+    checkpoint_x = checkpoint_platform.x + (checkpoint_platform.width // 2) - 15
+    checkpoint_y = checkpoint_platform.y - 30
+    checkpoint = Checkpoint(checkpoint_x, checkpoint_y)
 
-    # Add enemies on random upper platforms (not ground)
+    # Enemies
     enemies = []
-    for _ in range(1 + level_num):
-        plat = random.choice(platform_list[1:])
+
+    # 1 enemy guarding checkpoint
+    guard_x = checkpoint_platform.x + random.randint(0, max(10, checkpoint_platform.width - 40))
+    guard_y = checkpoint_platform.y - 40
+    guard_flying = random.choice([True, False])
+    enemies.append(Enemy(guard_x, guard_y, speed=enemy_speed, flying=guard_flying))
+
+    # Add more enemies
+    for _ in range(level_num):
+        plat = random.choice(platforms_above_ground)
         ex = plat.x + random.randint(0, max(10, plat.width - 40))
         ey = plat.y - 40
         flying = random.choice([True, False])
@@ -95,12 +105,12 @@ def load_level(level_num):
     return platform_list, goal, enemies, checkpoint
 
 def run_level(level_num, spawn_override=None):
-    # ✅ Safer spawn point: far left of the ground by default
+    # Safe ground spawn or checkpoint
     if spawn_override:
         spawn_point = spawn_override
         checkpoint_reached = True
     else:
-        spawn_point = [50, HEIGHT - 100]  # safe default position
+        spawn_point = [50, HEIGHT - 100]
         checkpoint_reached = False
 
     player = Player(*spawn_point)
@@ -144,7 +154,7 @@ def run_level(level_num, spawn_override=None):
             if player.get_rect().colliderect(goal.get_rect()):
                 return "next", None
 
-        # Always draw, even when paused
+        # Draw everything
         player.draw(screen)
         for plat in platforms:
             plat.draw(screen)
@@ -159,7 +169,7 @@ def run_level(level_num, spawn_override=None):
 
         pygame.display.flip()
 
-# 🎮 Game loop
+# Game loop
 MAX_LEVEL = 3
 
 while True:
