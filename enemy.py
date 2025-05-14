@@ -17,13 +17,12 @@ class Enemy:
         self.color = (255, 0, 0)
         self.on_ground = False
 
-        # AI state
-        self.mode = "patrol"  # or "chase"
+        self.mode = "patrol"
         self.direction = random.choice([-1, 1])
-        self.mood_timer = random.randint(120, 240)
+        self.mood_timer = random.randint(180, 300)
 
     def update(self, player_x, player_y, platforms):
-        # Countdown and switch modes occasionally
+        # Mood logic
         self.mood_timer -= 1
         if self.mood_timer <= 0:
             self.mode = "chase" if self.mode == "patrol" else "patrol"
@@ -49,17 +48,24 @@ class Enemy:
                 else:
                     self.x += self.speed * 0.6 * (1 if dx > 5 else -1 if dx < -5 else 0)
         else:
-            # Smooth patrol
             self.x += self.direction * self.speed * 0.3
 
             if self.flying:
                 self.apply_gravity()
                 self.check_platform_collision(platforms)
 
-            if random.random() < 0.005:  # occasionally flip direction
+            if not self.flying:
+                edge_buffer = 10
+                future_x = self.x + self.direction * edge_buffer
+                foot_rect = pygame.Rect(future_x, self.y + self.height + 1, self.width, 2)
+                if not any(foot_rect.colliderect(p.get_rect()) for p in platforms):
+                    self.direction *= -1
+
+            if random.random() < 0.005:
                 self.direction *= -1
 
-        # Clamp Y
+        # Clamp to screen bounds
+        self.x = max(0, min(self.x, 800 - self.width))
         self.y = min(self.y, 600 - self.height)
 
     def apply_gravity(self):
