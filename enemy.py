@@ -7,7 +7,7 @@ GRAVITY = 0.5
 class Enemy:
     def __init__(self, x, y, width=40, height=40, speed=2, range_to_follow=300, flying=False):
         self.x = x
-        self.y = y
+        self.y = min(self.y, 600 - self.height)
         self.vel_y = 0
         self.width = width
         self.height = height
