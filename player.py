@@ -1,4 +1,3 @@
-# player.py
 import pygame
 
 GRAVITY = 0.8
@@ -15,6 +14,12 @@ class Player:
         self.on_ground = False
         self.speed = 5
 
+        # ❤️ Health and lives
+        self.max_hp = 5
+        self.hp = self.max_hp
+        self.lives = 3
+        self.invincible_timer = 0
+
     def handle_input(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
@@ -25,7 +30,6 @@ class Player:
             self.vel_y = JUMP_STRENGTH
             self.on_ground = False
 
-        # ✅ Clamp player within screen
         self.x = max(0, min(self.x, 800 - self.width))
         self.y = max(0, min(self.y, 600 - self.height))
 
@@ -42,8 +46,27 @@ class Player:
                     self.vel_y = 0
                     self.on_ground = True
 
+    def take_damage(self, amount=1):
+        if self.invincible_timer == 0:
+            self.hp -= amount
+            if self.hp <= 0:
+                self.lives -= 1
+                self.hp = self.max_hp
+            self.invincible_timer = 60  # 1 second of invincibility
+
+    def update_invincibility(self):
+        if self.invincible_timer > 0:
+            self.invincible_timer -= 1
+
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.get_rect())
+
+    def draw_health(self, screen, font):
+        # Draw hearts or HP blocks
+        for i in range(self.hp):
+            pygame.draw.rect(screen, (255, 0, 0), (10 + i * 22, 10, 20, 20))
+        for i in range(self.lives):
+            pygame.draw.circle(screen, (0, 0, 0), (750 - i * 25, 20), 10)
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
