@@ -51,7 +51,7 @@ class Player:
             self.hp -= amount
             if self.hp <= 0:
                 self.lives -= 1
-                self.hp = self.max_hp
+                self.hp = 1  # start next life at 1 HP instead of full
             self.invincible_timer = 60  # 1 second of invincibility
 
     def update_invincibility(self):

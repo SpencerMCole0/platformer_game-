@@ -148,6 +148,8 @@ def run_level(level_num, spawn_override=None):
                 checkpoint_reached = True
 
             if player.get_rect().colliderect(goal.get_rect()):
+                if player.hp < player.max_hp:
+                    player.hp += 1
                 return "next", None
 
         player.draw(screen)
