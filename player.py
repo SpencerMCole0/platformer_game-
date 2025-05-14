@@ -25,6 +25,10 @@ class Player:
             self.vel_y = JUMP_STRENGTH
             self.on_ground = False
 
+        # ✅ Clamp player within screen
+        self.x = max(0, min(self.x, 800 - self.width))
+        self.y = max(0, min(self.y, 600 - self.height))
+
     def apply_gravity(self):
         self.vel_y += GRAVITY
         self.y += self.vel_y
@@ -33,7 +37,7 @@ class Player:
         self.on_ground = False
         for plat in platforms:
             if self.get_rect().colliderect(plat.get_rect()):
-                if self.vel_y > 0:
+                if self.vel_y > 0 and self.get_rect().bottom <= plat.y + 10:
                     self.y = plat.y - self.height
                     self.vel_y = 0
                     self.on_ground = True
