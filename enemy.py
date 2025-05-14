@@ -22,7 +22,6 @@ class Enemy:
         self.mood_timer = random.randint(180, 300)
 
     def update(self, player_x, player_y, platforms):
-        # Mood logic
         self.mood_timer -= 1
         if self.mood_timer <= 0:
             self.mode = "chase" if self.mode == "patrol" else "patrol"
@@ -30,23 +29,24 @@ class Enemy:
             if self.mode == "patrol":
                 self.direction = random.choice([-1, 1])
 
-        if self.mode == "chase":
-            dx = player_x - self.x
-            dy = player_y - self.y
-            dist = math.hypot(dx, dy)
-            if dist < self.range_to_follow:
-                if self.flying:
-                    self.apply_gravity()
-                    self.check_platform_collision(platforms)
+        dx = player_x - self.x
+        dy = player_y - self.y
 
-                    self.x += self.speed * 0.4 * (1 if dx > 5 else -1 if dx < -5 else 0)
+        if self.mode == "chase" and math.hypot(dx, dy) < self.range_to_follow:
+            if self.flying:
+                self.apply_gravity()
+                self.check_platform_collision(platforms)
 
-                    vertical_move = self.speed * 0.4 * (1 if dy > 5 else -1 if dy < -5 else 0)
+                if abs(dx) > 10:
+                    self.x += self.speed * 0.4 * (1 if dx > 0 else -1)
+                if abs(dy) > 10:
+                    vertical_move = self.speed * 0.4 * (1 if dy > 0 else -1)
                     test_rect = self.get_rect().move(0, vertical_move)
                     if not any(test_rect.colliderect(p.get_rect()) for p in platforms):
                         self.y += vertical_move
-                else:
-                    self.x += self.speed * 0.6 * (1 if dx > 5 else -1 if dx < -5 else 0)
+            else:
+                if abs(dx) > 10:
+                    self.x += self.speed * 0.6 * (1 if dx > 0 else -1)
         else:
             self.x += self.direction * self.speed * 0.3
 
@@ -64,7 +64,6 @@ class Enemy:
             if random.random() < 0.005:
                 self.direction *= -1
 
-        # Clamp to screen bounds
         self.x = max(0, min(self.x, 800 - self.width))
         self.y = min(self.y, 600 - self.height)
 
