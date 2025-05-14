@@ -48,20 +48,33 @@ def show_game_over_screen(checkpoint_reached):
         show_text_screen("Game Over", "R = Restart | Q = Quit")
         return wait_for_key([pygame.K_r, pygame.K_q])
 
-def run_game(spawn_override=None):
-    # Player setup
+def show_final_screen():
+    show_text_screen("You Beat All Levels!", "Press R to Play Again or Q to Quit")
+    return wait_for_key([pygame.K_r, pygame.K_q])
+
+# 🎯 Level loader
+def load_level(level_num):
+    # Difficulty scaling
+    enemy_speed = 2 + level_num
+    goal_y = HEIGHT - (80 + 40 * level_num)
+
+    # Platforms change with level
+    platform_list = [
+        Platform(0, HEIGHT - 40, WIDTH, 40),
+        Platform(300, 400 - 20 * level_num, 200, 20)
+    ]
+    goal = Goal(700, goal_y)
+    enemy = Enemy(350, platform_list[1].y - 40, speed=enemy_speed)
+    checkpoint = Checkpoint(500, HEIGHT - 70)
+
+    return platform_list, goal, enemy, checkpoint
+
+def run_level(level_num, spawn_override=None):
     spawn_point = spawn_override or [100, 100]
     player = Player(*spawn_point)
     checkpoint_reached = spawn_override is not None
 
-    platforms = [
-        Platform(0, HEIGHT - 40, WIDTH, 40),
-        Platform(300, 400, 200, 20),
-    ]
-
-    goal = Goal(700, HEIGHT - 80)
-    enemy = Enemy(350, 360)
-    checkpoint = Checkpoint(500, HEIGHT - 70)
+    platforms, goal, enemy, checkpoint = load_level(level_num)
 
     running = True
     while running:
@@ -82,15 +95,14 @@ def run_game(spawn_override=None):
             checkpoint_reached = True
 
         if player.get_rect().colliderect(goal.get_rect()):
-            key = show_win_screen()
-            return key, None
+            return "next", None
 
         if player.get_rect().colliderect(enemy.get_rect()):
             key = show_game_over_screen(checkpoint_reached)
             if key == pygame.K_r:
-                return key, None
+                return "restart", None
             elif key == pygame.K_c and checkpoint_reached:
-                return key, spawn_point
+                return "checkpoint", spawn_point
             elif key == pygame.K_q:
                 pygame.quit()
                 sys.exit()
@@ -105,19 +117,35 @@ def run_game(spawn_override=None):
 
         pygame.display.flip()
 
-    return pygame.K_q, None
+    return "quit", None
 
 # Main loop
+MAX_LEVEL = 3
+
 while True:
     show_start_screen()
+
+    level_num = 1
     checkpoint_state = None
 
-    while True:
-        result, checkpoint_state = run_game(spawn_override=checkpoint_state)
-        if result == pygame.K_q:
+    while level_num <= MAX_LEVEL:
+        result, checkpoint_state = run_level(level_num, spawn_override=checkpoint_state)
+        if result == "next":
+            level_num += 1
+            checkpoint_state = None
+        elif result == "restart":
+            level_num = 1
+            checkpoint_state = None
+        elif result == "checkpoint":
+            pass  # use same level and state
+        elif result == "quit":
             pygame.quit()
             sys.exit()
-        elif result == pygame.K_r:
-            checkpoint_state = None  # full restart
-        elif result == pygame.K_c:
-            pass  # keep checkpoint_state
+
+    # If loop completes, show final victory
+    final_key = show_final_screen()
+    if final_key == pygame.K_r:
+        continue
+    else:
+        pygame.quit()
+        sys.exit()
