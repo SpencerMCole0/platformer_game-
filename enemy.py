@@ -5,7 +5,7 @@ import random
 GRAVITY = 0.5
 
 class Enemy:
-    def __init__(self, x, y, width=20, height=20, speed=2, range_to_follow=300, flying=False):
+    def __init__(self, x, y, width=30, height=30, speed=2, range_to_follow=300, flying=False):
         self.x = x
         self.y = y
         self.vel_y = 0
@@ -17,54 +17,49 @@ class Enemy:
         self.color = (255, 0, 0)
         self.on_ground = False
 
-        # 🧠 Behavior AI
-        self.mode = "patrol"  # "patrol" or "chase"
-        self.mood_timer = random.randint(90, 180)  # frames until switch
-        self.direction = random.choice([-1, 1])  # initial patrol direction
+        # AI state
+        self.mode = "patrol"  # or "chase"
+        self.direction = random.choice([-1, 1])
+        self.mood_timer = random.randint(120, 240)
 
     def update(self, player_x, player_y, platforms):
-        # Switch mode randomly
+        # Countdown and switch modes occasionally
         self.mood_timer -= 1
         if self.mood_timer <= 0:
             self.mode = "chase" if self.mode == "patrol" else "patrol"
-            self.mood_timer = random.randint(90, 240)
-            self.direction = random.choice([-1, 1])
+            self.mood_timer = random.randint(180, 300)
+            if self.mode == "patrol":
+                self.direction = random.choice([-1, 1])
 
         if self.mode == "chase":
             dx = player_x - self.x
             dy = player_y - self.y
-            distance = math.hypot(dx, dy)
-
-            if distance < self.range_to_follow:
+            dist = math.hypot(dx, dy)
+            if dist < self.range_to_follow:
                 if self.flying:
                     self.apply_gravity()
                     self.check_platform_collision(platforms)
 
-                    if abs(dx) > 5:
-                        self.x += self.speed * 0.6 if dx > 0 else -self.speed * 0.6
-                    if abs(dy) > 5:
-                        vertical_rect = self.get_rect().move(0, self.speed * 0.6 if dy > 0 else -self.speed * 0.6)
-                        if not any(vertical_rect.colliderect(p.get_rect()) for p in platforms):
-                            self.y += self.speed * 0.6 if dy > 0 else -self.speed * 0.6
-                else:
-                    if dx < 0:
-                        self.x -= self.speed
-                    elif dx > 0:
-                        self.x += self.speed
-        else:
-            # Patrol mode: slow horizontal movement
-            self.x += self.direction * self.speed * 0.4
+                    self.x += self.speed * 0.4 * (1 if dx > 5 else -1 if dx < -5 else 0)
 
-            # Apply gravity and collision if flying
+                    vertical_move = self.speed * 0.4 * (1 if dy > 5 else -1 if dy < -5 else 0)
+                    test_rect = self.get_rect().move(0, vertical_move)
+                    if not any(test_rect.colliderect(p.get_rect()) for p in platforms):
+                        self.y += vertical_move
+                else:
+                    self.x += self.speed * 0.6 * (1 if dx > 5 else -1 if dx < -5 else 0)
+        else:
+            # Smooth patrol
+            self.x += self.direction * self.speed * 0.3
+
             if self.flying:
                 self.apply_gravity()
                 self.check_platform_collision(platforms)
 
-            # Occasionally reverse patrol direction
-            if random.random() < 0.01:
+            if random.random() < 0.005:  # occasionally flip direction
                 self.direction *= -1
 
-        # Clamp to bottom of screen
+        # Clamp Y
         self.y = min(self.y, 600 - self.height)
 
     def apply_gravity(self):
