@@ -49,20 +49,20 @@ class Player:
     def take_damage(self, amount=1):
         if self.invincible_timer == 0:
             self.hp -= amount
-            if self.hp <= 0:
-                self.lives -= 1
-                self.hp = 1  # start next life at 1 HP instead of full
-            self.invincible_timer = 60  # 1 second of invincibility
+            self.invincible_timer = 60
 
     def update_invincibility(self):
         if self.invincible_timer > 0:
             self.invincible_timer -= 1
 
+    def reset_health(self):
+        self.hp = self.max_hp
+        self.invincible_timer = 0
+
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.get_rect())
 
     def draw_health(self, screen, font):
-        # Draw hearts or HP blocks
         for i in range(self.hp):
             pygame.draw.rect(screen, (255, 0, 0), (10 + i * 22, 10, 20, 20))
         for i in range(self.lives):
