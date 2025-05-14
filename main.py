@@ -90,7 +90,7 @@ def run_level(level_num, spawn_override=None):
         player.handle_input()
         player.apply_gravity()
         player.check_collision(platforms)
-        enemy.update(player.x, player.y)
+        enemy.update(player.x, player.y, platforms)
 
         if player.get_rect().colliderect(checkpoint.get_rect()):
             spawn_point = [checkpoint.x, checkpoint.y - player.height]
