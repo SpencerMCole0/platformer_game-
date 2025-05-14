@@ -84,8 +84,10 @@ def load_level(level_num):
 
     enemies = []
 
-    # One guaranteed checkpoint guard
-    guard_x = checkpoint_platform.x + random.randint(0, max(10, checkpoint_platform.width - 40))
+    # Offset guard from checkpoint to avoid overlap
+    guard_offset = random.choice([-80, 80])  # Left or right
+    guard_x = checkpoint_x + guard_offset
+    guard_x = max(checkpoint_platform.x, min(guard_x, checkpoint_platform.x + checkpoint_platform.width - 40))
     guard_y = checkpoint_platform.y - 40
     guard_flying = random.choice([True, False])
     enemies.append(Enemy(guard_x, guard_y, speed=enemy_speed, flying=guard_flying))
