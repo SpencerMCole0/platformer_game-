@@ -52,21 +52,17 @@ def show_final_screen():
     show_text_screen("You Beat All Levels!", "Press R to Play Again or Q to Quit")
     return wait_for_key([pygame.K_r, pygame.K_q])
 
-# 🎯 Level loader
 def load_level(level_num):
-    # Difficulty scaling
-    enemy_speed = 2 + level_num
+    enemy_speed = 1.5 + level_num * 0.8
     goal_y = HEIGHT - (80 + 40 * level_num)
 
-    # Platforms change with level
     platform_list = [
         Platform(0, HEIGHT - 40, WIDTH, 40),
         Platform(300, 400 - 20 * level_num, 200, 20)
     ]
+    is_flying = level_num >= 2
     goal = Goal(700, goal_y)
-    is_flying = level_num >= 2  # flying starts on level 2+
     enemy = Enemy(350, platform_list[1].y - 40, speed=enemy_speed, flying=is_flying)
-
     checkpoint = Checkpoint(500, HEIGHT - 70)
 
     return platform_list, goal, enemy, checkpoint
@@ -102,14 +98,13 @@ def run_level(level_num, spawn_override=None):
         if player.get_rect().colliderect(enemy.get_rect()):
             key = show_game_over_screen(checkpoint_reached)
             if key == pygame.K_r:
-                return "restart", None
+                return "retry", None
             elif key == pygame.K_c and checkpoint_reached:
                 return "checkpoint", spawn_point
             elif key == pygame.K_q:
                 pygame.quit()
                 sys.exit()
 
-        # Draw everything
         player.draw(screen)
         for plat in platforms:
             plat.draw(screen)
@@ -121,7 +116,7 @@ def run_level(level_num, spawn_override=None):
 
     return "quit", None
 
-# Main loop
+# 🎮 Game loop
 MAX_LEVEL = 3
 
 while True:
@@ -132,19 +127,18 @@ while True:
 
     while level_num <= MAX_LEVEL:
         result, checkpoint_state = run_level(level_num, spawn_override=checkpoint_state)
+
         if result == "next":
             level_num += 1
             checkpoint_state = None
-        elif result == "restart":
-            level_num = 1
-            checkpoint_state = None
+        elif result == "retry":
+            checkpoint_state = None  # stay on same level
         elif result == "checkpoint":
-            pass  # use same level and state
+            pass  # respawn on same level from checkpoint
         elif result == "quit":
             pygame.quit()
             sys.exit()
 
-    # If loop completes, show final victory
     final_key = show_final_screen()
     if final_key == pygame.K_r:
         continue
