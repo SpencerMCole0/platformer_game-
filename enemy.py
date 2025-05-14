@@ -5,7 +5,7 @@ import random
 GRAVITY = 0.5
 
 class Enemy:
-    def __init__(self, x, y, width=40, height=40, speed=2, range_to_follow=300, flying=False):
+    def __init__(self, x, y, width=20, height=20, speed=2, range_to_follow=300, flying=False):
         self.x = x
         self.y = y
         self.vel_y = 0
