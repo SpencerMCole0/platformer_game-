@@ -95,10 +95,15 @@ def load_level(level_num):
     return platform_list, goal, enemies, checkpoint
 
 def run_level(level_num, spawn_override=None):
-    spawn_point = spawn_override or [100, 100]
-    player = Player(*spawn_point)
-    checkpoint_reached = spawn_override is not None
+    # ✅ Safer spawn point: far left of the ground by default
+    if spawn_override:
+        spawn_point = spawn_override
+        checkpoint_reached = True
+    else:
+        spawn_point = [50, HEIGHT - 100]  # safe default position
+        checkpoint_reached = False
 
+    player = Player(*spawn_point)
     platforms, goal, enemies, checkpoint = load_level(level_num)
 
     running = True
