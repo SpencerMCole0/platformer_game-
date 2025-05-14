@@ -19,6 +19,7 @@ class Enemy:
 
         self.mode = "patrol"
         self.direction = random.choice([-1, 1])
+        self.facing = self.direction
         self.mood_timer = random.randint(180, 300)
 
     def update(self, player_x, player_y, platforms):
@@ -39,6 +40,7 @@ class Enemy:
 
                 if abs(dx) > 10:
                     self.x += self.speed * 0.4 * (1 if dx > 0 else -1)
+                    self.facing = 1 if dx > 0 else -1
                 if abs(dy) > 10:
                     vertical_move = self.speed * 0.4 * (1 if dy > 0 else -1)
                     test_rect = self.get_rect().move(0, vertical_move)
@@ -47,8 +49,13 @@ class Enemy:
             else:
                 if abs(dx) > 10:
                     self.x += self.speed * 0.6 * (1 if dx > 0 else -1)
+                    self.facing = 1 if dx > 0 else -1
+                else:
+                    # In deadzone: don't move, keep facing
+                    pass
         else:
             self.x += self.direction * self.speed * 0.3
+            self.facing = self.direction
 
             if self.flying:
                 self.apply_gravity()
@@ -64,8 +71,9 @@ class Enemy:
             if random.random() < 0.005:
                 self.direction *= -1
 
-        self.x = max(0, min(self.x, 800 - self.width))
-        self.y = min(self.y, 600 - self.height)
+        # Clamp & round position to avoid jitter
+        self.x = round(max(0, min(self.x, 800 - self.width)), 2)
+        self.y = round(min(self.y, 600 - self.height), 2)
 
     def apply_gravity(self):
         self.vel_y += GRAVITY
