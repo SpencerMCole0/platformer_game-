@@ -169,16 +169,13 @@ def run_level(level_num, spawn_override=None):
         pygame.display.flip()
 
 # 🎮 Game loop
-MAX_LEVEL = 3
-
 while True:
     show_start_screen()
     level_num = 1
     checkpoint_state = None
 
-    while level_num <= MAX_LEVEL:
+    while True:  # Endless loop
         result, checkpoint_state = run_level(level_num, spawn_override=checkpoint_state)
-
         if result == "next":
             level_num += 1
             checkpoint_state = None
