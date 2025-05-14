@@ -76,36 +76,50 @@ def load_level(level_num):
     goal = Goal(goal_x, goal_y)
 
     mid_x = (50 + goal_x) // 2
-    platforms_above_ground = platform_list[1:-1]  # Exclude start and goal platforms
+    platforms_above_ground = platform_list[1:-1]  # skip ground and goal platform
     checkpoint_platform = min(platforms_above_ground, key=lambda p: abs((p.x + p.width // 2) - mid_x))
     checkpoint_x = checkpoint_platform.x + (checkpoint_platform.width // 2) - 15
     checkpoint_y = checkpoint_platform.y - 30
     checkpoint = Checkpoint(checkpoint_x, checkpoint_y)
 
+    # 🛡️ Block enemy overlap with checkpoint
     enemies = []
+    platforms_used = set()
+    checkpoint_rect = pygame.Rect(checkpoint_x, checkpoint_y, 30, 30)
 
-    # Offset guard from checkpoint to avoid overlap
-    guard_offset = random.choice([-80, 80])  # Left or right
-    guard_x = checkpoint_x + guard_offset
-    guard_x = max(checkpoint_platform.x, min(guard_x, checkpoint_platform.x + checkpoint_platform.width - 40))
-    guard_y = checkpoint_platform.y - 40
-    guard_flying = random.choice([True, False])
-    enemies.append(Enemy(guard_x, guard_y, speed=enemy_speed, flying=guard_flying))
-    platforms_used = {checkpoint_platform}
+    for _ in range(10):  # Try placing guard 10 times
+        guard_offset = random.choice([-100, -80, 80, 100])
+        guard_x = checkpoint_x + guard_offset
+        guard_x = max(checkpoint_platform.x, min(guard_x, checkpoint_platform.x + checkpoint_platform.width - 40))
+        guard_y = checkpoint_platform.y - 40
+        guard_rect = pygame.Rect(guard_x, guard_y, 40, 40)
 
-    # Controlled additional enemies
-    max_enemies = min(level_num + 1, len(platforms_above_ground))
+        if not guard_rect.colliderect(checkpoint_rect):
+            guard_flying = random.choice([True, False])
+            enemies.append(Enemy(guard_x, guard_y, speed=enemy_speed, flying=guard_flying))
+            platforms_used.add(checkpoint_platform)
+            break
+
+    enemy_platform_candidates = platform_list[1:-1]
+    max_enemies = min(level_num + 1, len(enemy_platform_candidates))
     for _ in range(max_enemies):
-        plat = random.choice(platforms_above_ground)
+        plat = random.choice(enemy_platform_candidates)
         if plat in platforms_used and plat.width < 160:
             continue
+
         ex = plat.x + random.randint(0, max(10, plat.width - 40))
         ey = plat.y - 40
+        e_rect = pygame.Rect(ex, ey, 40, 40)
+
+        if e_rect.colliderect(checkpoint_rect):
+            continue
+
         flying = random.choice([True, False])
         enemies.append(Enemy(ex, ey, speed=enemy_speed, flying=flying))
         platforms_used.add(plat)
 
     return platform_list, goal, enemies, checkpoint
+
 
 def run_level(level_num, spawn_override=None):
     if spawn_override:
