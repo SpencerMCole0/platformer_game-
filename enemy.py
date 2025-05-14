@@ -1,3 +1,4 @@
+# enemy.py
 import pygame
 
 class Enemy:
@@ -6,16 +7,14 @@ class Enemy:
         self.y = y
         self.width = width
         self.height = height
-        self.color = (255, 0, 0)
         self.speed = speed
-        self.direction = 1  # 1 = right, -1 = left
-        self.range = 100    # total movement range
-        self.start_x = x
+        self.color = (255, 0, 0)
 
-    def update(self):
-        self.x += self.speed * self.direction
-        if abs(self.x - self.start_x) >= self.range:
-            self.direction *= -1  # switch direction
+    def update(self, player_x):
+        if player_x < self.x:
+            self.x -= self.speed
+        elif player_x > self.x + self.width:
+            self.x += self.speed
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.get_rect())
