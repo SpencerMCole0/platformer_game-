@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 from player import Player
 from platform import Platform
 from goal import Goal
@@ -52,27 +53,43 @@ def show_final_screen():
     show_text_screen("You Beat All Levels!", "Press R to Play Again or Q to Quit")
     return wait_for_key([pygame.K_r, pygame.K_q])
 
+# ✅ Random level generator
 def load_level(level_num):
     enemy_speed = 1.5 + level_num * 0.8
-    goal_y = HEIGHT - (80 + 40 * level_num)
+    num_platforms = 2 + level_num
+    num_enemies = 1 + level_num
 
-    platform_list = [
-        Platform(0, HEIGHT - 40, WIDTH, 40),
-        Platform(300, 400 - 20 * level_num, 200, 20)
-    ]
-    is_flying = level_num >= 2
-    goal = Goal(700, goal_y)
-    enemy = Enemy(350, platform_list[1].y - 40, speed=enemy_speed, flying=is_flying)
-    checkpoint = Checkpoint(500, HEIGHT - 70)
+    platform_list = [Platform(0, HEIGHT - 40, WIDTH, 40)]
 
-    return platform_list, goal, enemy, checkpoint
+    for _ in range(num_platforms):
+        plat_width = random.randint(100, 250)
+        plat_x = random.randint(0, WIDTH - plat_width)
+        plat_y = random.randint(150, HEIGHT - 150)
+        platform_list.append(Platform(plat_x, plat_y, plat_width, 20))
+
+    checkpoint_x = random.randint(50, WIDTH - 100)
+    checkpoint = Checkpoint(checkpoint_x, HEIGHT - 70)
+
+    goal_x = random.randint(WIDTH - 200, WIDTH - 60)
+    goal_y = random.randint(80, 200)
+    goal = Goal(goal_x, goal_y)
+
+    enemies = []
+    for _ in range(num_enemies):
+        plat = random.choice(platform_list[1:])
+        enemy_x = plat.x + random.randint(0, max(10, plat.width - 40))
+        enemy_y = plat.y - 40
+        is_flying = random.choice([True, False])
+        enemies.append(Enemy(enemy_x, enemy_y, speed=enemy_speed, flying=is_flying))
+
+    return platform_list, goal, enemies, checkpoint
 
 def run_level(level_num, spawn_override=None):
     spawn_point = spawn_override or [100, 100]
     player = Player(*spawn_point)
     checkpoint_reached = spawn_override is not None
 
-    platforms, goal, enemy, checkpoint = load_level(level_num)
+    platforms, goal, enemies, checkpoint = load_level(level_num)
 
     running = True
     while running:
@@ -86,7 +103,18 @@ def run_level(level_num, spawn_override=None):
         player.handle_input()
         player.apply_gravity()
         player.check_collision(platforms)
-        enemy.update(player.x, player.y, platforms)
+
+        for enemy in enemies:
+            enemy.update(player.x, player.y, platforms)
+            if player.get_rect().colliderect(enemy.get_rect()):
+                key = show_game_over_screen(checkpoint_reached)
+                if key == pygame.K_r:
+                    return "retry", None
+                elif key == pygame.K_c and checkpoint_reached:
+                    return "checkpoint", spawn_point
+                elif key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
 
         if player.get_rect().colliderect(checkpoint.get_rect()):
             spawn_point = [checkpoint.x, checkpoint.y - player.height]
@@ -95,22 +123,13 @@ def run_level(level_num, spawn_override=None):
         if player.get_rect().colliderect(goal.get_rect()):
             return "next", None
 
-        if player.get_rect().colliderect(enemy.get_rect()):
-            key = show_game_over_screen(checkpoint_reached)
-            if key == pygame.K_r:
-                return "retry", None
-            elif key == pygame.K_c and checkpoint_reached:
-                return "checkpoint", spawn_point
-            elif key == pygame.K_q:
-                pygame.quit()
-                sys.exit()
-
         player.draw(screen)
         for plat in platforms:
             plat.draw(screen)
         goal.draw(screen)
-        enemy.draw(screen)
         checkpoint.draw(screen)
+        for enemy in enemies:
+            enemy.draw(screen)
 
         pygame.display.flip()
 
@@ -132,9 +151,9 @@ while True:
             level_num += 1
             checkpoint_state = None
         elif result == "retry":
-            checkpoint_state = None  # stay on same level
+            checkpoint_state = None
         elif result == "checkpoint":
-            pass  # respawn on same level from checkpoint
+            pass
         elif result == "quit":
             pygame.quit()
             sys.exit()
